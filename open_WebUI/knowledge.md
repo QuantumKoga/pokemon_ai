@@ -1,0 +1,1 @@
+Just add all of the *.md files to knowledge in Workspace
