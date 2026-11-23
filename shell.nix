@@ -14,7 +14,8 @@ pkgs.mkShell {
     python3Packages.orjson
   ];
   shellHook = ''
-    echo "Pokémon Champions scraper — Python + requests + BeautifulSoup"
-    echo "Uruchom: python scrape_champions.py"
+    echo "Pokémon Champions scraper"
+    echo "To generate databases run: python generate/run_all.py"
+    echo "To enable the API, run: python -m uvicorn api.main:app --host 127.0.0.1 --port 8000 --reload"
   '';
 }
