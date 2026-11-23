@@ -1,710 +1,901 @@
 # Pokémon Champions AI Team Builder
 
-An evolving knowledge base and toolkit designed to help AI understand Pokémon Champions competitive play, analyze the metagame, and build well-structured competitive teams.
+An evolving data collection and knowledge platform designed to help AI systems understand **Pokémon Champions competitive play** and make informed team-building decisions.
 
-The goal of this project is to go beyond a traditional Pokédex. Instead of simply storing information about Pokémon, moves, abilities, and items, this project aims to provide AI with the knowledge and analytical tools needed to understand competitive Pokémon battles and make informed team-building decisions.
+The project provides structured Pokémon data, game regulations, battle information and competitive metagame statistics through JSON databases and a read-only REST API. It is designed to serve as a reliable knowledge layer for an AI assistant integrated with tools such as Open WebUI.
 
-The long-term vision is to create an AI assistant capable of building complete teams, evaluating matchups, identifying strategic synergies, calculating damage, and explaining the reasoning behind its recommendations.
-
----
-
-## Project Status
-
-**Current stage: Foundation – Core Data Collection**
-
-The project currently includes scripts that collect and generate structured databases based on information available on [Serebii.net](https://www.serebii.net/).
-
-### Currently Implemented
-
-- [x] Pokémon database generation
-- [x] Ability database generation
-- [x] Move database generation
-- [x] Item database generation
-- [ ] Game mechanics documentation
-- [ ] Battle rules and regulation database
-- [ ] Competitive metagame data collection
-- [ ] Competitive Pokémon sets
-- [ ] Team synergy and matchup databases
-- [ ] Battle calculation tools
-- [ ] AI-powered team builder
-
-The project is under active development. Its architecture and planned features may evolve as new data sources and requirements are explored.
+The goal is to move beyond a traditional Pokédex: instead of relying on an AI model's general Pokémon knowledge, the system gives it access to structured, game-specific and competitively relevant information.
 
 ---
 
-## Core Data
+## Table of Contents
 
-The current implementation focuses on four fundamental datasets.
-
-| Database | Description |
-|---|---|
-| `pokemon_database.json` | Available Pokémon species, base stats, types, and other relevant information. |
-| `abilities_database.json` | Pokémon abilities and their effects. |
-| `moves_database.json` | Moves, their properties, parameters, and battle effects. |
-| `items_database.json` | Available items and their descriptions. |
-
-These databases provide the foundation for more advanced competitive analysis.
-
-For example, they allow an AI system to answer questions about available Pokémon, their abilities, and their learnable moves. However, competitive team building requires additional context, including battle mechanics, regulations, metagame trends, and strategic relationships between Pokémon.
-
-This is why the project is designed to grow into a comprehensive competitive knowledge base.
+- [Project Goals](#project-goals)
+- [Current Features](#current-features)
+- [Architecture Overview](#architecture-overview)
+- [Project Structure](#project-structure)
+- [Data Collection and Generation](#data-collection-and-generation)
+- [Database Structure](#database-structure)
+- [Metagame Data](#metagame-data)
+- [REST API](#rest-api)
+- [Open WebUI Integration](#open-webui-integration)
+- [Installation and Development](#installation-and-development)
+- [Running the API](#running-the-api)
+- [Configuration](#configuration)
+- [Data Quality and Design Principles](#data-quality-and-design-principles)
+- [Roadmap](#roadmap)
+- [Data Sources](#data-sources)
 
 ---
 
-## Vision & Planned Architecture
+## Project Goals
 
-The long-term architecture is divided into several independent but interconnected layers.
+The main objective is to build a knowledge system that allows an AI assistant to reason about Pokémon Champions competitive battles using actual game data and competitive statistics.
 
-### 1. Game Mechanics & Rules
+A traditional language model may know Pokémon, moves and abilities, but that does not necessarily mean it understands:
 
-**Priority: Very High**
+- Which Pokémon are available in a particular regulation.
+- Which moves, abilities and items are actually legal.
+- How Pokémon are used in the current competitive environment.
+- Which teammates commonly appear together.
+- Which competitive sets have demonstrated success.
+- How game-specific mechanics affect team composition.
 
-A reliable understanding of game mechanics is essential for accurate competitive analysis.
+This project aims to provide that missing context.
 
-Rather than relying on general Pokémon knowledge or assumptions based on previous games, the AI should have access to dedicated documentation describing the mechanics and rules applicable to Pokémon Champions.
+### Long-term vision
 
-Planned documentation:
+The intended AI assistant should eventually be able to:
 
-| File | Description |
-|---|---|
-| `game_mechanics.md` | General overview of Pokémon Champions mechanics. |
-| `battle_rules.md` | Battle formats, team selection, regulations, and competitive restrictions. |
-| `damage_calculation.md` | Damage formulas, STAB, type effectiveness, critical hits, modifiers, and rounding. |
-| `stat_points.md` | Stat Points distribution, limits, stat calculations, and nature interactions. |
-| `stat_stages.md` | Stat boosts and reductions, including the -6 to +6 stage system. |
-| `speed_and_turn_order.md` | Move priority, Speed calculations, Trick Room, Tailwind, paralysis, and other modifiers. |
-| `weather_and_terrain.md` | Weather conditions, terrains, and their interactions. |
-| `status_conditions.md` | Burn, Poison, Sleep, Paralysis, Freeze, and other status conditions. |
-| `doubles_mechanics.md` | Spread moves, redirection, Protect, Fake Out, Helping Hand, Ally Switch, and other Doubles mechanics. |
-| `team_building_guide.md` | Team roles, synergies, defensive coverage, and competitive team-building principles. |
+1. Understand the user's team-building requirements and restrictions.
+2. Identify the active regulation and available Pokémon.
+3. Analyze competitive usage statistics and tournament trends.
+4. Identify useful Pokémon combinations and team cores.
+5. Build complete competitive teams with appropriate moves, abilities, items and stat distributions.
+6. Evaluate weaknesses, matchups and strategic consistency.
+7. Explain its recommendations using actual data and game mechanics.
 
-#### Stat Points vs. EVs and IVs
-
-One important consideration is that Pokémon Champions uses its own Stat Points system rather than the traditional EV distribution system.
-
-The AI must understand both traditional Pokémon terminology and Champions-specific mechanics without confusing them.
-
-For example:
-
-- A request for `252 EV Speed` should be interpreted as a request for maximum Speed investment and translated into the appropriate Stat Points distribution.
-- A request for `max Speed` should result in an actual calculated Speed stat.
-- A request for `minimum Speed for Trick Room` should result in an optimized Stat Points distribution.
-
-Rules and regulations must be versioned and dated. This will prevent the AI from applying outdated mechanics or competitive restrictions after a regulation change.
-
-### 2. Metagame Database
-
-**Priority: Very High**
-
-Knowing what a Pokémon can do is not enough. The AI should also understand how Pokémon are actually used in competitive play.
-
-The planned metagame database will store usage statistics and competitive trends, including:
-
-- Usage percentage.
-- Win rate.
-- Top Cut usage.
-- Most common moves.
-- Most common items.
-- Most common abilities.
-- Common Stat Points distributions.
-- Common natures and stat configurations.
-- Most frequent teammates.
-- Common competitive roles.
-- Usage trends over time.
-
-
-#### Planned Data Sources
-
-- **Pokémon Champions Battle Data** – In-game usage statistics, popular Pokémon, moves, abilities, items, teammates, and Stat Points distributions.
-- **INF VGC** – Tournament statistics, usage, win rates, cores, matchups, Speed tiers, and competitive trends.
-- **Smogon Stats** – Monthly Pokémon Showdown usage statistics and competitive sets.
-- **Victory Road** – Tournament results, published teams, and team reports.
-
-An important architectural principle is to keep data from different environments separate.
-
-Official in-game ladder statistics, Pokémon Showdown statistics, and tournament results represent different competitive environments. They should never be combined into a single usage metric without clear labeling and methodology.
-
-### 3. Competitive Sets Database
-
-**Priority: Very High**
-
-This database will store ready-to-use competitive configurations for individual Pokémon.
-
-A Pokémon should not be limited to a single recommended set. Different configurations may serve different roles, team archetypes, and strategic purposes.
-
-For example, Garchomp could have:
-
-- Offensive Sweeper.
-- Choice Scarf.
-- Focus Sash Lead.
-- Bulky Setup.
-- Sand Team Attacker.
-
-
-### 4. Team Synergies & Cores
-
-**Priority: High**
-
-This layer should help the AI understand why certain Pokémon work well together.
-
-It will store:
-
-- Frequently paired Pokémon.
-- Popular three- and four-Pokémon cores.
-- Ability synergies.
-- Move synergies.
-- Weather and terrain combinations.
-- Offensive combinations.
-- Defensive combinations.
-- Complementary type coverage.
-- Mutual weakness coverage.
-
-
-The database should distinguish between two concepts:
-
-- **Popular Synergy** – Pokémon frequently appear together in competitive teams.
-- **Strategic Synergy** – Pokémon have meaningful mechanical or tactical interactions that improve their effectiveness together.
-
-A popular combination is not necessarily a strategically optimal one.
-
-### 5. Matchups & Threat Analysis
-
-**Priority: High**
-
-The AI should be able to evaluate how a team performs against common competitive threats and archetypes.
-
-Examples of questions it should eventually answer:
-
-- How does this team perform against Rain?
-- What options does it have against Trick Room?
-- Does it have a reliable answer to Gholdengo?
-- How does it handle Intimidate-heavy teams?
-- Can it deal with Tailwind pressure?
-- Which popular Pokémon are the biggest threats?
-
-Two types of matchup data are planned.
-
-**Pokémon vs. Pokémon Matchups**
-
-```json
-{
-  "pokemon": "Garchomp",
-  "opponent": "Gholdengo",
-  "matchup": "unfavorable",
-  "reason": [
-    "Gholdengo threatens Garchomp with strong special attacks.",
-    "Garchomp can threaten Gholdengo with Ground-type attacks."
-  ],
-  "recommended_answers": [
-    "Incineroar",
-    "Kingambit"
-  ]
-}
-```
-
-**Archetype Matchups**
-
-Matchup evaluations should not rely exclusively on manually assigned ratings.
-
-Where possible, they should be derived from damage calculations, game mechanics, and actual competitive statistics.
-
-### 6. Strategies & Team Archetypes
-
-**Priority: High**
-
-The AI should understand common competitive strategies and recognize the structure of different team archetypes.
-
-Planned archetypes include:
-
-| Archetype | Description |
-|---|---|
-| Rain | Uses rain to boost Water-type attacks and activate weather-related abilities. |
-| Sun | Exploits sunlight, Fire-type damage, Chlorophyll, and related synergies. |
-| Trick Room | Controls turn order to benefit slower Pokémon. |
-| Tailwind | Uses Speed control to gain a positional advantage. |
-| Sand | Combines sandstorm mechanics, defensive synergies, and offensive pressure. |
-| Hyper Offense | Focuses on overwhelming opponents through offensive pressure and setup. |
-| Balance | Combines offensive and defensive tools with flexible game plans. |
-| Bulky Offense | Uses powerful attackers with enough durability to survive retaliation. |
-
-Each archetype should eventually contain:
-
-- Strategy description.
-- Primary win conditions.
-- Typical Pokémon.
-- Common cores.
-- Common moves and items.
-- Strengths and weaknesses.
-- Methods of identifying the archetype.
-- Recommended counterplay.
-- Example tournament teams.
-
-Structured information should primarily be stored in JSON, with more detailed strategic explanations documented in Markdown.
-
-### 7. Tournament Database
-
-**Priority: Medium**
-
-This database will preserve actual competitive achievements rather than relying only on general usage statistics.
-
-Planned information includes:
-
-- Tournament name.
-- Event date.
-- Format and regulation.
-- Number of participants.
-- Winner.
-- Top 8 / Top 16 placements.
-- Competitor teams.
-- Final standings.
-- Links to original team lists and reports.
-
-This will allow the AI to distinguish between a Pokémon combination that is simply popular and one that has demonstrated success in high-level competition.
-
-Potential sources include Victory Road and official Play! Pokémon tournament results.
-
-Original source URLs should always be preserved.
+The project is being developed as a modular knowledge and tooling platform. Data collection, storage, API access and AI integration are kept separate so that each component can evolve independently.
 
 ---
 
-## Analytical Tools
+## Current Features
 
-An important part of the project is moving beyond static information and providing the AI with tools capable of performing actual calculations.
+The repository currently contains the following implemented components:
 
-The AI should not be expected to estimate complex battle mechanics from textual descriptions alone.
+| Component | Status | Description |
+|---|---|---|
+| Pokémon database | Implemented | Pokémon species, forms, types, base stats, abilities and learnable moves |
+| Moves database | Implemented | Move properties, categories, effects and Pokémon learnsets |
+| Abilities database | Implemented | Ability names and descriptions |
+| Items database | Implemented | Held items and descriptions |
+| Regulation database | Implemented | Pokémon Champions regulations, restrictions and changes |
+| Metagame database | Implemented | Official ladder and tournament statistics |
+| Database generators | Implemented | Automated collection and JSON generation |
+| REST API | Implemented | Read-only FastAPI service |
+| Open WebUI integration | Present | Integration components for AI access to the data |
+| Game mechanics documentation | In progress | Structured documentation of battle rules and mechanics |
+| Damage calculator | Planned | Dedicated damage calculation engine |
+| Team analyzer | Planned | Automated competitive team evaluation |
+| AI team builder | Long-term goal | Complete team generation and strategic analysis |
 
-Instead, it should pass structured inputs to dedicated calculation tools and use their results when making recommendations.
+The project is actively developed, and the available data and functionality may change as Pokémon Champions and its competitive environment evolve.
 
-### 1. Damage Calculator
+---
 
-**Planned**
+## Architecture Overview
 
-A damage calculation engine should accept information about both Pokémon, their moves, and the current battle conditions.
-
-Example input:
+The system is divided into four main layers.
 
 ```text
-Attacker:
-    Pokémon: Garchomp
-    Level: 50
-    Move: Earthquake
-    Nature: Jolly
-    Stat Points: 32 Attack
-
-Defender:
-    Pokémon: Incineroar
-    Level: 50
-    Nature: Careful
-    Stat Points: 32 HP / 32 Defense
-
-Battle:
-    Weather: None
-    Terrain: Grassy Terrain
-    Critical Hit: False
-    Spread Move: True
+                  External Data Sources
+                           |
+                           v
+                Data Collection Scripts
+                       generate/
+                           |
+                           v
+                   JSON Databases
+                      database/
+                           |
+                           v
+                    FastAPI Backend
+                         api/
+                           |
+                           v
+                    Open WebUI / AI
 ```
 
-Expected output:
+### 1. Data Collection
 
-```text
-Damage:
-    Minimum: ...
-    Maximum: ...
-    Percentage: ...%
+Python scripts retrieve information from external sources, parse it and normalize it into structured JSON files.
 
-KO Chance:
-    Guaranteed: No
-    Possible: ...
-```
+### 2. Data Storage
 
-A potential implementation is [`@smogon/calc`](https://github.com/smogon/damage-calc), which provides a reusable damage calculation engine and includes Pokémon Champions mechanics.
+Collected information is stored in separate JSON databases. This keeps the datasets independent and makes them easy to inspect, regenerate and maintain.
 
-The calculator should be treated as the source of truth for damage calculations whenever its supported mechanics and data match the active game version.
+### 3. REST API
 
-### 2. Stat Points Calculator
+A FastAPI application exposes the databases through read-only HTTP endpoints.
 
-**Planned**
+The API provides structured search and retrieval operations rather than requiring an AI model to inspect raw JSON files.
 
-A dedicated calculator for:
+### 4. AI Integration
 
-- Stat Points distribution.
-- Final stat calculations.
-- Nature interactions.
-- Maximum and minimum stat values.
-- Optimized defensive benchmarks.
-- Speed optimization.
-- Traditional EV terminology conversion.
+Open WebUI can use the API through its integration components to retrieve relevant information while answering questions and assisting with competitive team building.
 
-### 3. Speed Calculator
-
-**Planned**
-
-A tool for calculating Speed values and comparing Speed tiers under different conditions.
-
-It should account for:
-
-- Base Speed.
-- Level.
-- Nature.
-- Stat Points.
-- Stat stages.
-- Tailwind.
-- Trick Room.
-- Paralysis.
-- Other relevant Speed modifiers.
-
-### 4. Type Coverage Analyzer
-
-**Planned**
-
-Analyze offensive type coverage and identify Pokémon that resist or are immune to the team's primary attacks.
-
-### 5. Team Analyzer
-
-**Planned**
-
-Evaluate a complete team for:
-
-- Defensive weaknesses.
-- Offensive coverage.
-- Shared vulnerabilities.
-- Speed control.
-- Defensive switching options.
-- Role distribution.
-- Matchup performance.
-- Archetype weaknesses.
-
----
-
-## Planned Team Building Workflow
-
-The ultimate goal is to create an AI system that follows a structured team-building process instead of randomly selecting six Pokémon.
-
-The proposed workflow:
-
-### Input
-
-The user specifies their goals and restrictions.
-
-Example:
-
-> Build a Balance team for VGC Doubles without Legendary Pokémon.
-
-### Step 1 – Analyze Requirements
-
-Determine:
-
-- Active regulation.
-- Available Pokémon.
-- Battle format.
-- Team restrictions.
-- User preferences.
-- Relevant competitive rules.
-
-### Step 2 – Select Strategy and Cores
-
-Use metagame statistics, competitive sets, synergies, and successful tournament teams to identify suitable foundations.
-
-### Step 3 – Build the Team
-
-Select six Pokémon and determine:
-
-- Abilities.
-- Moves.
-- Items.
-- Natures.
-- Stat Points distributions.
-- Individual roles.
-- Team synergies.
-
-### Step 4 – Technical Validation
-
-Validate:
-
-- Pokémon and set legality.
-- Damage calculations.
-- Speed tiers.
-- Type coverage.
-- Defensive weaknesses.
-- Important matchups.
-- Team consistency.
-
-### Output
-
-A complete team recommendation containing:
-
-- Six Pokémon with full competitive sets.
-- Explanation of each Pokémon's role.
-- Team strategy and win conditions.
-- Recommended leads.
-- Game plans for important matchups.
-- Strengths and weaknesses.
-- Potential threats.
-- Alternative Pokémon or sets.
-
-The most important principle is that the AI should understand the team's intended strategy and win conditions before selecting individual Pokémon.
-
----
-
-## Additional Planned Features
-
-### Team Roles
-
-A dedicated classification system should describe the competitive roles that Pokémon can perform.
-
-Examples:
-
-- Physical Sweeper.
-- Special Sweeper.
-- Wallbreaker.
-- Bulky Attacker.
-- Special Wall.
-- Physical Wall.
-- Support.
-- Speed Control.
-- Redirection.
-- Setup Sweeper.
-- Pivot.
-- Revenge Killer.
-- Weather Setter.
-- Weather Abuser.
-
-Roles should not necessarily be permanently assigned to individual Pokémon. A Pokémon's role can change depending on its competitive set and team composition.
-
-### Lead Selection & Early-Game Planning
-
-Doubles battles require careful consideration of opening Pokémon combinations.
-
-The AI should understand:
-
-- Which Pokémon combinations make effective leads.
-- Their available turn-one options.
-- Their offensive and defensive interactions.
-- How to respond to common opposing leads.
-- How to establish an early positional advantage.
-
-### Battle Logs & Replays
-
-A potential future feature is collecting and analyzing battle replays or detailed battle logs.
-
-This could provide information about:
-
-- Moves actually selected during battles.
-- Combinations that lead to victories.
-- Repeated mistakes in specific matchups.
-- Successful and unsuccessful strategies.
-- Real-world effectiveness of competitive sets.
-
-Battle replay analysis could eventually become an important source of practical strategic knowledge.
+The API does not generate teams or make strategic decisions itself. Its responsibility is to provide reliable, structured information to the AI layer.
 
 ---
 
 ## Project Structure
 
-The following is the proposed long-term project structure. Not all directories and files have been implemented yet.
-
 ```text
 pokemon_ai/
 │
-├── data/
-│   ├── pokemon_database.json
-│   ├── abilities_database.json
-│   ├── moves_database.json
-│   ├── items_database.json
-│   │
-│   ├── competitive/
-│   │   ├── usage_stats/
-│   │   ├── competitive_sets/
-│   │   ├── team_synergies.json
-│   │   ├── matchups.json
-│   │   ├── strategies.json
-│   │   └── tournaments/
-│   │
-│   └── rules/
-│       ├── current_regulation.json
-│       ├── regulation_history.json
-│       └── type_chart.json
+├── api/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── database.py
+│   ├── pokemon.py
+│   ├── moves.py
+│   ├── abilities.py
+│   ├── items.py
+│   ├── rulesets.py
+│   └── meta.py
 │
-├── knowledge/
-│   ├── game_mechanics.md
-│   ├── battle_rules.md
-│   ├── damage_calculation.md
-│   ├── stat_points.md
-│   ├── stat_stages.md
-│   ├── speed_and_turn_order.md
-│   ├── weather_and_terrain.md
-│   ├── status_conditions.md
-│   ├── doubles_mechanics.md
-│   └── team_building_guide.md
+├── database/
+│   ├── pokemon.json
+│   ├── moves.json
+│   ├── abilities.json
+│   ├── items.json
+│   ├── rulesets.json
+│   └── meta.json
 │
-├── tools/
-│   ├── damage_calculator/
-│   ├── stat_calculator/
-│   ├── speed_calculator/
-│   ├── type_coverage.py
-│   └── team_analyzer.py
-│
-├── scrapers/
+├── generate/
+│   ├── run_all.py
 │   ├── get_pokemon.py
-│   ├── get_abilities.py
 │   ├── get_moves.py
+│   ├── get_abilities.py
 │   ├── get_items.py
+│   ├── get_rulesets.py
 │   └── get_metagame.py
 │
-└── prompts/
-    ├── system_prompt.txt
-    └── team_building_prompt.txt
+├── knowledge/
+│   └── battle_rules.md
+│
+├── open_WebUI/
+│
+├── shell.nix
+├── .gitignore
+└── README.md
 ```
 
-The structure is intended to be modular, allowing individual components to be implemented and updated independently.
+### `api/`
+
+Contains the REST API implementation.
+
+- `main.py` — FastAPI application and HTTP endpoint definitions.
+- `database.py` — JSON database access, caching and file management.
+- `pokemon.py` — Pokémon search and detailed information retrieval.
+- `moves.py` — Move search, details and Pokémon learnset queries.
+- `abilities.py` — Ability search and Pokémon ability retrieval.
+- `items.py` — Item search and details.
+- `rulesets.py` — Regulation information, restrictions and verification data.
+- `meta.py` — Competitive metagame queries and data retrieval.
+
+### `database/`
+
+Contains the generated JSON databases used by the API.
+
+These files are the primary data layer of the project.
+
+### `generate/`
+
+Contains the scrapers and data-generation scripts.
+
+Each script is responsible for a specific dataset. `run_all.py` executes the generators in sequence.
+
+### `knowledge/`
+
+Contains human-readable documentation about Pokémon Champions mechanics and competitive rules.
+
+This documentation is intended to provide additional context that cannot always be represented effectively through structured database records.
+
+### `open_WebUI/`
+
+Contains components related to integrating the API with Open WebUI, allowing an AI model to retrieve Pokémon and competitive information through dedicated tools.
 
 ---
 
-## Data Sources & References
+## Data Collection and Generation
 
-The project relies on external sources for collecting and validating Pokémon data, competitive statistics, and game mechanics.
+The project uses Python scripts to collect information from external sources and convert it into structured JSON databases.
 
-| Source | Intended Use |
+The generators are located in `generate/`.
+
+| Script | Output | Responsibility |
+|---|---|---|
+| `get_pokemon.py` | `pokemon.json` | Collects Pokémon species, forms, stats, types, abilities and learnable moves |
+| `get_moves.py` | `moves.json` | Collects move information and learnset relationships |
+| `get_abilities.py` | `abilities.json` | Collects abilities and their descriptions |
+| `get_items.py` | `items.json` | Collects available items and descriptions |
+| `get_rulesets.py` | `rulesets.json` | Collects regulation information and restrictions |
+| `get_metagame.py` | `meta.json` | Collects official ladder and tournament metagame statistics |
+
+### Running all generators
+
+The project includes a script that executes all generators in the correct order:
+
+```bash
+python generate/run_all.py
+```
+
+The scripts are executed sequentially.
+
+If a generator fails, the process stops and reports the failing script instead of continuing with potentially incomplete data.
+
+### Running individual generators
+
+Each generator can also be executed independently:
+
+```bash
+python generate/get_pokemon.py
+python generate/get_moves.py
+python generate/get_abilities.py
+python generate/get_items.py
+python generate/get_rulesets.py
+python generate/get_metagame.py
+```
+
+This is useful when only one dataset needs to be refreshed.
+
+**Important:** Running the generators performs external requests and rewrites the corresponding JSON databases. It is not necessary to run them when only the API code has changed.
+
+---
+
+## Database Structure
+
+The project uses JSON files rather than a traditional relational database.
+
+Each dataset is stored independently, which makes the data easy to inspect and allows individual components to be updated without changing the entire system.
+
+### Pokémon — `pokemon.json`
+
+Contains information about Pokémon available in Pokémon Champions.
+
+Depending on the entry, this includes:
+
+- Pokémon name and form.
+- National Pokédex number.
+- Typing.
+- Base stats.
+- Available abilities.
+- Learnable moves.
+
+The database distinguishes between different Pokémon forms where relevant.
+
+### Moves — `moves.json`
+
+Contains move information such as:
+
+- Name.
+- Type.
+- Category.
+- Power.
+- Accuracy.
+- Priority.
+- Additional move properties.
+- Pokémon that can learn the move.
+
+### Abilities — `abilities.json`
+
+Contains ability names and descriptions.
+
+The API can also retrieve the abilities associated with a Pokémon and its available forms.
+
+### Items — `items.json`
+
+Contains available items and their descriptions.
+
+### Regulations — `rulesets.json`
+
+Contains information about Pokémon Champions competitive regulations, including:
+
+- Regulation name and identifier.
+- Current or previous status.
+- Start and end dates.
+- Selectable Pokémon and forms.
+- Mega Evolution availability.
+- Regulation changes.
+- Restrictions and rules.
+- Source information and verification data.
+
+### Metagame — `meta.json`
+
+Contains competitive statistics and usage information collected from different competitive environments.
+
+This database is described in more detail below.
+
+---
+
+## Metagame Data
+
+The metagame database is one of the most important parts of the project.
+
+It allows the AI to understand not only what a Pokémon can do, but also how it is actually used in competitive play.
+
+The database combines information from multiple sources while keeping each source separate.
+
+### Data sources
+
+The current metagame structure supports three source categories:
+
+| Source | Description |
 |---|---|
-| [Serebii](https://www.serebii.net/) | Pokémon, abilities, moves, items, and game information. |
-| Pokémon Champions Battle Data | In-game competitive usage statistics and distributions. |
-| [INF VGC](https://infovgc.com/) | Tournament statistics, usage, cores, matchups, and competitive analysis. |
-| [Smogon](https://www.smogon.com/stats/) | Pokémon Showdown statistics and competitive trends. |
-| [Victory Road](https://victoryroad.pro/) | Tournament results, published teams, and team reports. |
-| [VGC Builder](https://vgc.build/) | Champions rules, Stat Points, competitive team building, and damage calculations. |
-| [Smogon Damage Calculator](https://github.com/smogon/damage-calc) | Damage calculation engine and battle mechanics reference. |
-| [Play! Pokémon](https://www.pokemon.com/us/play-pokemon) | Official competitive regulations and tournament rules. |
+| `official_ladder` | Official Pokémon Champions ladder statistics |
+| `tournaments` | Tournament performance and competitive statistics |
+| `showdown` | Pokémon Showdown statistics and competitive information |
 
-Different sources may represent different game environments, formats, and regulations. Their data should be stored separately and labeled accordingly.
+These sources represent different competitive environments and must not be treated as interchangeable.
 
----
+For example, official ladder usage does not necessarily reflect tournament success. Similarly, Pokémon Showdown statistics should not automatically be interpreted as Pokémon Champions usage statistics.
 
-## Data Quality & Versioning
+### Official ladder
 
-Data accuracy is essential for a competitive AI system.
+Official ladder data is organized by regulation and battle format.
 
-Every database record should preserve its origin and, whenever possible, information about its reliability and validity.
+Supported formats include:
 
-The AI must be able to distinguish between:
+- Doubles
+- Singles
 
-- Official game data.
-- Official competitive regulations.
-- Community statistics.
-- Tournament results.
-- Calculated values.
-- Estimated or inferred information.
-- Unverified strategic claims.
+Depending on the available source data, the database may contain:
 
-Where applicable, datasets should also include:
+- Pokémon rank.
+- Usage statistics.
+- Popular moves.
+- Popular items.
+- Popular abilities.
+- Common partners.
+- Stat distributions.
+- Natures.
 
-- Game version.
-- Regulation identifier.
-- Data collection date.
-- Source methodology.
-- Confidence level.
-- Whether values are verified or estimated.
+Example structure:
 
-Historical regulations and datasets should be preserved rather than overwritten.
+```text
+pokemon
+└── Abomasnow
+    └── sources
+        └── official_ladder
+            └── regulations
+                └── M-B
+                    └── formats
+                        ├── Doubles
+                        └── Singles
+```
 
-This will allow the AI to work with historical competitive environments and avoid applying outdated rules to current teams.
+### Tournament statistics
 
----
+Tournament data focuses on competitive performance rather than general ladder usage.
 
-## Development Roadmap
+Depending on the regulation and source availability, it can include:
 
-Development is divided into four major stages.
+- Adjusted win rate.
+- Popular moves, items and abilities.
+- Natures.
+- Teammates.
+- Common competitive sets.
+- Popular team cores.
+- Tournament format.
+- Data collection period.
+- Original source URL.
 
-### Phase 1 – Foundations
+Tournament statistics are particularly useful for identifying successful combinations and competitive strategies.
 
-**Current priority**
+### Missing values
 
-- [ ] Create `game_mechanics.md`.
-- [ ] Create `battle_rules.md`.
-- [ ] Document the Stat Points system.
-- [ ] Document stat stages.
-- [ ] Document Speed and turn order.
-- [ ] Create `type_chart.json`.
-- [ ] Establish regulation versioning.
-- [ ] Establish consistent data metadata.
+Missing values are represented as `null` where appropriate.
 
-### Phase 2 – Competitive Knowledge
+A missing statistic must never be interpreted as zero.
 
-- [ ] Develop metagame statistics scrapers.
-- [ ] Create the competitive sets database.
-- [ ] Collect popular Pokémon cores.
-- [ ] Create the strategies and archetypes database.
-- [ ] Collect tournament teams and results.
-- [ ] Implement team role classification.
-- [ ] Develop matchup information.
+For example:
 
-### Phase 3 – Analytical Tools
+- `percentage: null` means that a percentage is unavailable.
+- `percentage: 0` means that a measured percentage is actually zero.
 
-- [ ] Implement the Damage Calculator.
-- [ ] Implement the Stat Points Calculator.
-- [ ] Implement the Speed Calculator.
-- [ ] Implement the Type Coverage Analyzer.
-- [ ] Implement the Team Weakness Analyzer.
-- [ ] Implement automated team validation.
+The distinction is important when the AI interprets statistics and compares competitive options.
 
-### Phase 4 – AI Team Builder
+### Teammate statistics
 
-- [ ] Create the AI system prompt.
-- [ ] Implement knowledge base retrieval.
-- [ ] Implement competitive team generation.
-- [ ] Integrate analytical tools.
-- [ ] Implement automatic team validation.
-- [ ] Generate strategic explanations and alternatives.
-- [ ] Add matchup-specific game plans.
-- [ ] Develop lead selection and turn planning.
+Teammate percentages must also be interpreted in the context of their source.
+
+For example, a teammate usage percentage may describe the proportion of teams containing a particular Pokémon that also contain another Pokémon.
+
+It does not necessarily represent the global usage percentage of that teammate.
+
+The AI should use the metric definitions and source context rather than assuming that all percentages describe the same thing.
 
 ---
 
-## Development Priorities
+## REST API
 
-The recommended development order is intentional.
+The project exposes a read-only REST API built with **FastAPI**.
 
-The first priority is not collecting as much competitive data as possible. It is establishing a reliable foundation of game mechanics and regulations.
+The API provides access to Pokémon information, moves, abilities, items, regulations and competitive metagame data.
 
-Even excellent tournament statistics can produce misleading recommendations if the AI does not correctly understand the underlying battle mechanics.
+### General information
 
-Therefore, the initial focus should be:
+| Property | Value |
+|---|---|
+| Framework | FastAPI |
+| Server | Uvicorn |
+| Data storage | JSON files |
+| API access | Read-only |
+| Default local address | `http://127.0.0.1:8000` |
+| OpenAPI documentation | `/docs` |
+| Alternative API documentation | `/redoc` |
 
-1. Document Pokémon Champions mechanics.
-2. Document battle rules and regulations.
-3. Implement accurate Stat Points calculations.
-4. Document Speed, stat stages, damage, and Doubles mechanics.
-5. Only then expand into competitive data collection and team analysis.
+### Health check
+
+```http
+GET /health
+```
+
+Returns the API status.
+
+Example:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+### Pokémon endpoints
+
+| Endpoint | Parameters | Description |
+|---|---|---|
+| `GET /pokemon/search` | `query`, `pokemon_type`, `limit` | Search Pokémon by name, form or type |
+| `GET /pokemon/details` | `name` | Retrieve detailed Pokémon information |
+
+Example:
+
+```http
+GET /pokemon/search?query=garchomp
+```
+
+```http
+GET /pokemon/details?name=Garchomp
+```
+
+### Moves endpoints
+
+| Endpoint | Parameters | Description |
+|---|---|---|
+| `GET /moves/search` | `query`, `move_type`, `category`, `limit` | Search moves |
+| `GET /moves/details` | `name` | Retrieve move details |
+| `GET /moves/pokemon` | `pokemon_name`, `move_type`, `category`, `limit` | Retrieve moves learnable by a Pokémon |
+
+Example:
+
+```http
+GET /moves/search?move_type=Ground&category=Physical
+```
+
+```http
+GET /moves/pokemon?pokemon_name=Garchomp
+```
+
+### Abilities endpoints
+
+| Endpoint | Parameters | Description |
+|---|---|---|
+| `GET /abilities/search` | `query`, `limit` | Search abilities |
+| `GET /abilities/details` | `name` | Retrieve ability details |
+| `GET /abilities/pokemon` | `pokemon_name` | Retrieve abilities available to a Pokémon |
+
+### Items endpoints
+
+| Endpoint | Parameters | Description |
+|---|---|---|
+| `GET /items/search` | `query`, `limit` | Search items |
+| `GET /items/details` | `name` | Retrieve item details |
+
+### Regulation endpoints
+
+| Endpoint | Parameters | Description |
+|---|---|---|
+| `GET /rulesets/available` | None | List available regulations |
+| `GET /rulesets/details` | `name` | Retrieve regulation information |
+| `GET /rulesets/pokemon` | `name`, `query`, `limit` | Search selectable Pokémon forms |
+| `GET /rulesets/changes` | `name` | Retrieve regulation changes |
+| `GET /rulesets/mega-evolutions` | `name`, `query`, `limit` | Search permitted Mega Evolutions |
+| `GET /rulesets/rules` | `name`, `category` | Retrieve regulation rules |
+| `GET /rulesets/verification` | `name` | Retrieve regulation verification information |
+
+### Metagame endpoints
+
+| Endpoint | Parameters | Description |
+|---|---|---|
+| `GET /meta/available` | None | Retrieve metagame metadata and available Pokémon |
+| `GET /meta/pokemon/search` | `query`, `limit` | Search Pokémon in the metagame database |
+| `GET /meta/pokemon/overview` | `pokemon_name` | Retrieve an overview of available metagame information |
+| `GET /meta/official-ladder` | `pokemon_name`, `regulation`, `format` | Retrieve official ladder statistics |
+| `GET /meta/tournaments` | `pokemon_name`, `regulation` | Retrieve tournament statistics |
+| `GET /meta/category` | `pokemon_name`, `source`, `regulation`, `category`, `format` | Retrieve a specific metagame category |
+| `GET /meta/tournament-sets` | `pokemon_name`, `regulation` | Retrieve competitive tournament sets |
+| `GET /meta/tournament-cores` | `pokemon_name`, `regulation` | Retrieve tournament team cores |
+
+### Example metagame requests
+
+Retrieve available metagame information:
+
+```http
+GET /meta/available
+```
+
+Search for a Pokémon:
+
+```http
+GET /meta/pokemon/search?query=Abomasnow
+```
+
+Retrieve a Pokémon's metagame overview:
+
+```http
+GET /meta/pokemon/overview?pokemon_name=Abomasnow
+```
+
+Retrieve official ladder statistics:
+
+```http
+GET /meta/official-ladder?pokemon_name=Abomasnow&regulation=M-B&format=Doubles
+```
+
+Retrieve tournament information:
+
+```http
+GET /meta/tournaments?pokemon_name=Abomasnow&regulation=M-C
+```
+
+Retrieve a specific category:
+
+```http
+GET /meta/category?pokemon_name=Abomasnow&source=official_ladder&regulation=M-B&category=moves&format=Doubles
+```
+
+Retrieve tournament sets:
+
+```http
+GET /meta/tournament-sets?pokemon_name=Abomasnow&regulation=M-C
+```
+
+Retrieve tournament cores:
+
+```http
+GET /meta/tournament-cores?pokemon_name=Abomasnow&regulation=M-C
+```
+
+The API exposes its complete interactive documentation at:
+
+```text
+http://127.0.0.1:8000/docs
+```
 
 ---
 
-## Long-Term Goal
+## Open WebUI Integration
 
-The ultimate objective is to build an AI-powered Pokémon Champions competitive assistant that acts as a knowledgeable team-building partner rather than a simple Pokémon information database.
+The API is designed to be consumed by an AI assistant through Open WebUI.
 
-It should be able to:
+Instead of asking the language model to rely on its internal knowledge, dedicated integration tools allow it to retrieve information directly from the project databases.
 
-- Understand the current competitive environment.
-- Identify viable strategies and team archetypes.
-- Build teams around specific win conditions.
-- Select appropriate Pokémon sets.
-- Calculate damage and defensive benchmarks.
-- Analyze Speed interactions.
-- Identify weaknesses and problematic matchups.
-- Suggest effective leads and opening strategies.
-- Validate team legality.
-- Explain its decisions using reliable data.
-- Adapt recommendations when regulations and metagame trends change.
+This enables more reliable answers to questions such as:
 
-**The goal is not simply to find six strong Pokémon. It is to build a coherent team with a clear strategy, reliable answers to common threats, and a realistic plan for winning battles.**
+- Which Pokémon are available in the current regulation?
+- What moves can Garchomp learn?
+- Which abilities are available to a specific Pokémon?
+- What are the most common items used by a Pokémon?
+- Which Pokémon commonly appear alongside Abomasnow?
+- How is a Pokémon performing in official ladder statistics?
+- Which sets and team cores have appeared in tournaments?
+
+### Integration architecture
+
+```text
+User
+ |
+ v
+Open WebUI
+ |
+ v
+AI Model
+ |
+ v
+Pokémon API Tools
+ |
+ v
+FastAPI
+ |
+ v
+JSON Databases
+ |
+ v
+Structured Results
+ |
+ v
+AI Response
+```
+
+The API provides the factual data, while the AI model interprets the information and uses it to answer the user's request.
+
+This separation is intentional: the model should not invent statistics, Pokémon availability or competitive trends when the information can be retrieved from the underlying database.
+
+### Network configuration
+
+When Open WebUI runs inside a separate Docker container, `127.0.0.1` refers to the container itself rather than the host running the API.
+
+The API base URL configured in Open WebUI must therefore be reachable from the Open WebUI container.
 
 ---
 
-## License & Data Attribution
+## Installation and Development
 
-This project uses information collected from external websites and data sources.
+### Requirements
 
-All original Pokémon-related intellectual property belongs to its respective owners, including Nintendo, The Pokémon Company, and Game Freak.
+The project uses:
 
-External datasets, statistics, and documentation remain subject to their respective sources' terms of use and attribution requirements.
+- Python 3
+- Nix (for the provided development shell)
+- Internet access for data collection
+- FastAPI and Uvicorn for the API
+- Requests and BeautifulSoup for scraping
 
-This project is an independent fan-made development project and is not affiliated with or endorsed by Nintendo, The Pokémon Company, or Game Freak.
+The exact Python dependencies are declared in `shell.nix`.
+
+### Clone the repository
+
+```bash
+git clone https://github.com/QuantumEspresso/pokemon_ai.git
+cd pokemon_ai
+```
+
+### Enter the Nix development environment
+
+```bash
+nix-shell
+```
+
+The development shell provides the required Python packages, including:
+
+- `requests`
+- `beautifulsoup4`
+- `lxml`
+- `tqdm`
+- `fastapi`
+- `uvicorn`
+- `pydantic`
+- `httpx`
+- `orjson`
+
+The shell also prints useful commands when activated.
+
+---
+
+## Running the API
+
+From the project root, inside the development environment:
+
+```bash
+python -m uvicorn api.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+The API will be available at:
+
+```text
+http://127.0.0.1:8000
+```
+
+Interactive documentation:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+Health check:
+
+```bash
+curl http://127.0.0.1:8000/health
+```
+
+The API can also be deployed as a systemd service or through another process manager.
+
+For production deployments, use an address and network configuration appropriate for the environment in which the API and its clients run.
+
+---
+
+## Configuration
+
+### Database directory
+
+By default, the API reads JSON databases from:
+
+```text
+<project_root>/database/
+```
+
+The database directory can be overridden using the environment variable:
+
+```bash
+POKEMON_AI_DATABASE_DIR=/path/to/database
+```
+
+For example:
+
+```bash
+export POKEMON_AI_DATABASE_DIR=/data/pokemon_ai/database
+```
+
+This makes it possible to keep the application code and database files in separate locations.
+
+### JSON database caching
+
+The API uses a lightweight read-only JSON database manager implemented in `api/database.py`.
+
+It provides:
+
+- Thread-safe access.
+- Lazy loading of database files.
+- In-memory caching.
+- Automatic cache invalidation when a file's modification time or size changes.
+- Manual cache clearing and forced reload support.
+
+The API does not need to parse every JSON file again for every request.
+
+---
+
+## Data Quality and Design Principles
+
+Competitive recommendations are only as reliable as the data behind them.
+
+The project follows several important principles.
+
+### 1. Preserve source separation
+
+Official ladder statistics, tournament statistics and Pokémon Showdown data represent different environments.
+
+They must remain separate and clearly identified.
+
+### 2. Preserve missing values
+
+A missing value must not be silently converted into zero or another assumed value.
+
+`null` means that the information is unavailable or was not provided by the source.
+
+### 3. Preserve regulation context
+
+Competitive restrictions change over time.
+
+Data must be interpreted in the context of its regulation rather than assuming that current rules apply to historical information.
+
+### 4. Keep original source information
+
+Where available, original URLs and source metadata should be retained.
+
+This makes it easier to verify information and investigate discrepancies.
+
+### 5. Separate facts from analysis
+
+The database provides collected information.
+
+Strategic interpretations, matchup assessments and team-building recommendations belong to the analytical AI layer and should be grounded in the available data.
+
+### 6. Avoid assumptions about game mechanics
+
+Pokémon Champions has its own rules and mechanics.
+
+Information from previous Pokémon games should not automatically be applied when it has not been verified for Champions.
+
+The `knowledge/` directory is intended to provide additional game-specific context for the AI.
+
+---
+
+## Roadmap
+
+The project is being developed incrementally.
+
+The following items describe the intended direction, not necessarily functionality already available in the repository.
+
+### Phase 1 — Data and Knowledge Foundations
+
+- [x] Pokémon database generation
+- [x] Moves database generation
+- [x] Abilities database generation
+- [x] Items database generation
+- [x] Regulation database generation
+- [x] Metagame data collection
+- [x] JSON database access layer
+- [x] Read-only FastAPI service
+- [x] Initial battle rules documentation
+- [ ] Expand game mechanics documentation
+- [ ] Improve data validation and consistency checks
+
+### Phase 2 — Competitive Knowledge
+
+- [x] Official ladder statistics
+- [x] Tournament statistics
+- [x] Common moves, items and abilities
+- [x] Teammate statistics
+- [x] Tournament sets and cores
+- [ ] Expand competitive set analysis
+- [ ] Develop team archetype information
+- [ ] Improve matchup and synergy analysis
+- [ ] Expand historical metagame tracking
+
+### Phase 3 — Analytical Tools
+
+- [ ] Damage calculator
+- [ ] Stat Points calculator
+- [ ] Speed calculator
+- [ ] Type coverage analyzer
+- [ ] Defensive weakness analyzer
+- [ ] Team consistency analyzer
+- [ ] Automated team legality validation
+
+### Phase 4 — AI Team Builder
+
+- [ ] Structured team-building workflow
+- [ ] Regulation-aware team generation
+- [ ] Competitive set recommendations
+- [ ] Team synergy and matchup evaluation
+- [ ] Automated technical validation
+- [ ] Strategic explanations and alternative options
+
+### Long-term goal
+
+The final system should be able to generate complete competitive teams while explaining:
+
+- Why each Pokémon was selected.
+- What role it performs.
+- Which teammates support it.
+- What the team's win conditions are.
+- Which opposing strategies may cause problems.
+- How the team can respond to important matchups.
+- Which alternative Pokémon or sets could improve the composition.
+
+The objective is not simply to generate six Pokémon, but to build a coherent team with a clear strategy.
+
+---
+
+## Data Sources
+
+The project uses external websites and services to collect and validate information.
+
+| Source | Usage |
+|---|---|
+| [Serebii](https://www.serebii.net/) | Pokémon, moves, abilities and items |
+| [Pokémon Champions Battle Data](https://championsbattledata.com/) | Official ladder statistics |
+| [INF VGC](https://infovgc.com/) | Tournament statistics and competitive information |
+| [ViZukan](https://www.vizukan.app/) | Regulation information |
+| [VGC Builder](https://vgc.build/) | Competitive rules and team-building reference |
+
+External sources may change their website structure, data formats or availability.
+
+Consequently, data generators may require maintenance when their upstream sources change.
+
+The project is not affiliated with Nintendo, The Pokémon Company or any of the external data providers.
+
+---
+
+## Disclaimer
+
+Pokémon and Pokémon-related names, characters and assets are trademarks of their respective owners.
+
+This project is an independent fan-made research and development project. It is not an official Pokémon product and is not affiliated with or endorsed by Nintendo, The Pokémon Company or Game Freak.
+
+The collected data is intended for informational, educational and competitive research purposes.
+
+---
+
+**Built to give AI the knowledge it needs to understand competitive Pokémon Champions — not just recognize Pokémon names.**
