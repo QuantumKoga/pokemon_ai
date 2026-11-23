@@ -657,7 +657,7 @@ The exact Python dependencies are declared in `shell.nix`.
 ### Clone the repository
 
 ```bash
-git clone https://github.com/QuantumEspresso/pokemon_ai.git
+git clone https://github.com/QuantumKoga/pokemon_ai.git
 cd pokemon_ai
 ```
 
