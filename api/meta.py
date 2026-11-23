@@ -38,28 +38,36 @@ def _get_meta_data() -> dict[str, Any]:
 
 
 def _get_pokemon_records() -> dict[str, dict[str, Any]]:
-    """
-    Return Pokémon records indexed by their names.
-
-    Supports both a dictionary and a list as the root 'pokemon' structure.
-    """
     data = _get_meta_data()
-    pokemon = data.get("pokemon", {})
+    pokemon = data.get("pokemon", [])
 
     if isinstance(pokemon, dict):
-        return {
-            name: entry
-            for name, entry in pokemon.items()
-            if isinstance(name, str) and isinstance(entry, dict)
-        }
+        records = {}
+
+        for key, entry in pokemon.items():
+            if not isinstance(entry, dict):
+                continue
+
+            name = entry.get("pokemon") or entry.get("name") or key
+
+            if isinstance(name, str) and name.strip():
+                records[name] = entry
+
+        return records
 
     if isinstance(pokemon, list):
-        return {
-            entry["name"]: entry
-            for entry in pokemon
-            if isinstance(entry, dict)
-            and isinstance(entry.get("name"), str)
-        }
+        records = {}
+
+        for entry in pokemon:
+            if not isinstance(entry, dict):
+                continue
+
+            name = entry.get("pokemon") or entry.get("name")
+
+            if isinstance(name, str) and name.strip():
+                records[name] = entry
+
+        return records
 
     return {}
 
@@ -67,6 +75,7 @@ def _get_pokemon_records() -> dict[str, dict[str, Any]]:
 def _find_pokemon(name: str) -> tuple[str, dict[str, Any]] | None:
     """Find a Pokémon by exact name, ignoring letter case."""
     query = name.strip().casefold()
+
     if not query:
         return None
 
@@ -79,7 +88,10 @@ def _find_pokemon(name: str) -> tuple[str, dict[str, Any]] | None:
     return None
 
 
-def _find_regulation(regulations: Any, name: str) -> tuple[str, dict[str, Any]] | None:
+def _find_regulation(
+    regulations: Any,
+    name: str,
+) -> tuple[str, dict[str, Any]] | None:
     """Find a regulation by key or common display name."""
     if not isinstance(regulations, dict):
         return None
@@ -87,7 +99,10 @@ def _find_regulation(regulations: Any, name: str) -> tuple[str, dict[str, Any]] 
     query = name.strip().casefold()
 
     for regulation_name, entry in regulations.items():
-        if not isinstance(regulation_name, str) or not isinstance(entry, dict):
+        if not isinstance(regulation_name, str):
+            continue
+
+        if not isinstance(entry, dict):
             continue
 
         candidates = {
@@ -96,6 +111,7 @@ def _find_regulation(regulations: Any, name: str) -> tuple[str, dict[str, Any]] 
         }
 
         display_name = entry.get("name")
+
         if isinstance(display_name, str):
             candidates.add(display_name.casefold())
 
@@ -110,18 +126,65 @@ def _get_source_regulations(
     source: str,
 ) -> dict[str, Any]:
     sources = pokemon_entry.get("sources", {})
+
     if not isinstance(sources, dict):
         return {}
 
     source_data = sources.get(source, {})
+
     if not isinstance(source_data, dict):
         return {}
 
     regulations = source_data.get("regulations", {})
+
     return regulations if isinstance(regulations, dict) else {}
 
 
-def _available_categories(data: dict[str, Any], known: set[str]) -> list[str]:
+def _get_ladder_formats(
+    regulation_data: dict[str, Any],
+) -> dict[str, Any]:
+    """
+    Return formats from an official ladder regulation.
+
+    Current structure:
+        regulation_data["formats"]["Doubles"]
+
+    Also supports the older flat structure where formats were stored
+    directly inside regulation_data.
+    """
+    formats = regulation_data.get("formats")
+
+    if isinstance(formats, dict):
+        return formats
+
+    if formats is not None:
+        return {}
+
+    return regulation_data
+
+
+def _find_format(
+    formats: dict[str, Any],
+    format_name: str,
+) -> tuple[str, dict[str, Any]] | None:
+    """Find a format by name, ignoring letter case."""
+    query = format_name.strip().casefold()
+
+    for name, data in formats.items():
+        if (
+            isinstance(name, str)
+            and name.casefold() == query
+            and isinstance(data, dict)
+        ):
+            return name, data
+
+    return None
+
+
+def _available_categories(
+    data: dict[str, Any],
+    known: set[str],
+) -> list[str]:
     """List categories that contain data."""
     return sorted(
         category
@@ -146,14 +209,19 @@ def get_available_meta_data() -> dict[str, Any]:
     if not isinstance(metadata, dict):
         metadata = {}
 
+    records = _get_pokemon_records()
+
     return {
         "metadata": deepcopy(metadata),
-        "pokemon_count": len(_get_pokemon_records()),
-        "available_pokemon": sorted(_get_pokemon_records().keys()),
+        "pokemon_count": len(records),
+        "available_pokemon": sorted(records.keys()),
     }
 
 
-def search_meta_pokemon(query: str = "", limit: int = 20) -> list[dict[str, Any]]:
+def search_meta_pokemon(
+    query: str = "",
+    limit: int = 20,
+) -> list[dict[str, Any]]:
     """
     Search Pokémon in the metagame database.
 
@@ -169,13 +237,15 @@ def search_meta_pokemon(query: str = "", limit: int = 20) -> list[dict[str, Any]
             continue
 
         sources = entry.get("sources", {})
+
         if not isinstance(sources, dict):
             sources = {}
 
         results.append({
             "name": name,
             "available_sources": sorted(
-                source for source in META_SOURCES
+                source
+                for source in META_SOURCES
                 if isinstance(sources.get(source), dict)
             ),
         })
@@ -186,7 +256,9 @@ def search_meta_pokemon(query: str = "", limit: int = 20) -> list[dict[str, Any]
     return results
 
 
-def get_pokemon_meta_overview(pokemon_name: str) -> dict[str, Any]:
+def get_pokemon_meta_overview(
+    pokemon_name: str,
+) -> dict[str, Any]:
     """
     Return a short overview of available metagame data for one Pokémon.
 
@@ -201,23 +273,34 @@ def get_pokemon_meta_overview(pokemon_name: str) -> dict[str, Any]:
 
     name, entry = result
 
-    ladder_regulations = _get_source_regulations(entry, "official_ladder")
-    tournament_regulations = _get_source_regulations(entry, "tournaments")
-    showdown_regulations = _get_source_regulations(entry, "showdown")
+    ladder_regulations = _get_source_regulations(
+        entry, "official_ladder"
+    )
+    tournament_regulations = _get_source_regulations(
+        entry, "tournaments"
+    )
+    showdown_regulations = _get_source_regulations(
+        entry, "showdown"
+    )
 
     ladder = []
-    for regulation, formats in ladder_regulations.items():
-        if not isinstance(formats, dict):
+
+    for regulation, regulation_data in ladder_regulations.items():
+        if not isinstance(regulation_data, dict):
             continue
 
+        formats = _get_ladder_formats(regulation_data)
         available_formats = []
+
         for format_name, format_data in formats.items():
             if not isinstance(format_data, dict):
                 continue
 
             categories = _available_categories(
-                format_data, LADDER_CATEGORIES
+                format_data,
+                LADDER_CATEGORIES,
             )
+
             if categories:
                 available_formats.append({
                     "format": format_name,
@@ -231,13 +314,16 @@ def get_pokemon_meta_overview(pokemon_name: str) -> dict[str, Any]:
             })
 
     tournaments = []
+
     for regulation, tournament_data in tournament_regulations.items():
         if not isinstance(tournament_data, dict):
             continue
 
         categories = _available_categories(
-            tournament_data, TOURNAMENT_CATEGORIES
+            tournament_data,
+            TOURNAMENT_CATEGORIES,
         )
+
         if categories:
             tournaments.append({
                 "regulation": regulation,
@@ -268,7 +354,8 @@ def get_official_ladder_data(
     """
     Return official ladder data for one Pokémon, regulation and format.
 
-    Example: get_official_ladder_data("Abomasnow", "M-C", "Doubles")
+    Example:
+        get_official_ladder_data("Abomasnow", "M-B", "Doubles")
     """
     result = _find_pokemon(pokemon_name)
 
@@ -278,7 +365,11 @@ def get_official_ladder_data(
         )
 
     name, entry = result
-    regulations = _get_source_regulations(entry, "official_ladder")
+
+    regulations = _get_source_regulations(
+        entry, "official_ladder"
+    )
+
     found = _find_regulation(regulations, regulation)
 
     if found is None:
@@ -286,33 +377,30 @@ def get_official_ladder_data(
             f"No official ladder data for {name} in regulation {regulation}."
         )
 
-    regulation_name, formats = found
-    format_data = None
+    regulation_name, regulation_data = found
 
-    for format_name, data in formats.items():
-        if (
-            isinstance(format_name, str)
-            and format_name.casefold() == format.strip().casefold()
-            and isinstance(data, dict)
-        ):
-            format_data = data
-            break
+    formats = _get_ladder_formats(regulation_data)
+    found_format = _find_format(formats, format)
 
-    if format_data is None:
+    if found_format is None:
         available = [
-            key for key, value in formats.items()
+            key
+            for key, value in formats.items()
             if isinstance(value, dict)
         ]
+
         return _not_found(
             f"No {format} ladder data for {name} in {regulation_name}. "
             f"Available formats: {available}"
         )
 
+    format_name, format_data = found_format
+
     return {
         "pokemon": name,
         "source": "official_ladder",
         "regulation": regulation_name,
-        "format": format,
+        "format": format_name,
         "data": deepcopy(format_data),
     }
 
@@ -334,7 +422,11 @@ def get_tournament_data(
         )
 
     name, entry = result
-    regulations = _get_source_regulations(entry, "tournaments")
+
+    regulations = _get_source_regulations(
+        entry, "tournaments"
+    )
+
     found = _find_regulation(regulations, regulation)
 
     if found is None:
@@ -398,6 +490,7 @@ def get_meta_category(
         )
 
     name, entry = result
+
     regulations = _get_source_regulations(entry, source)
     found = _find_regulation(regulations, regulation)
 
@@ -415,21 +508,22 @@ def get_meta_category(
                 f"Available categories: {sorted(LADDER_CATEGORIES)}"
             )
 
-        format_data = None
-        for format_name, data in regulation_data.items():
-            if (
-                isinstance(format_name, str)
-                and format_name.casefold() == format.strip().casefold()
-                and isinstance(data, dict)
-            ):
-                format_data = data
-                break
+        formats = _get_ladder_formats(regulation_data)
+        found_format = _find_format(formats, format)
 
-        if format_data is None:
+        if found_format is None:
+            available = [
+                key
+                for key, value in formats.items()
+                if isinstance(value, dict)
+            ]
+
             return _not_found(
-                f"No {format} data for {name} in {regulation_name}."
+                f"No {format} data for {name} in {regulation_name}. "
+                f"Available formats: {available}"
             )
 
+        format_name, format_data = found_format
         selected_data = format_data.get(category)
 
     elif source == "tournaments":
@@ -440,6 +534,7 @@ def get_meta_category(
             )
 
         selected_data = regulation_data.get(category)
+        format_name = None
 
     else:
         return _not_found(
@@ -455,7 +550,7 @@ def get_meta_category(
         "pokemon": name,
         "source": source,
         "regulation": regulation_name,
-        "format": format if source == "official_ladder" else None,
+        "format": format_name,
         "category": category,
         "data": deepcopy(selected_data),
     }
