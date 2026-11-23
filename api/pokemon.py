@@ -37,8 +37,6 @@ def _get_types(entry: dict[str, Any]) -> list[str]:
                 return value
 
         # If there is only one mapping, use it.
-        # Do not merge multiple mappings because they may describe
-        # different forms.
         if len(types) == 1:
             value = next(iter(types.values()))
             if isinstance(value, list):
@@ -84,36 +82,57 @@ def _format_ambiguous_result(
     }
 
 
+def _matches_pokemon(
+    entry: dict[str, Any],
+    query: str,
+) -> bool:
+    """Check whether a Pokemon entry matches a name or form query."""
+    name = (entry.get("name") or "").casefold()
+    form = (entry.get("form") or "").casefold()
+
+    return (
+        query in name
+        or query in form
+    )
+
+
 def search_pokemon(
     query: str = "",
     pokemon_type: str | None = None,
     limit: int = 20,
 ) -> list[dict[str, Any]]:
-    """Search Pokemon by name, form or type."""
+    """
+    Search Pokemon by name, form or type.
+
+    A name search returns all matching forms of the Pokemon.
+    The result limit is applied after matching entries.
+    """
     query = query.strip().casefold()
     pokemon_type = pokemon_type.strip().casefold() if pokemon_type else None
 
+    entries = _get_pokemon_entries()
     results = []
-    max_results = max(1, min(limit, 100))
 
-    for entry in _get_pokemon_entries():
-        name = entry.get("name", "")
-        form = entry.get("form") or ""
-
-        if query and query not in name.casefold() and query not in form.casefold():
+    for entry in entries:
+        if query and not _matches_pokemon(entry, query):
             continue
 
         types = _get_types(entry)
 
-        if pokemon_type and pokemon_type not in [t.casefold() for t in types]:
+        if pokemon_type and pokemon_type not in [
+            pokemon_type_entry.casefold()
+            for pokemon_type_entry in types
+        ]:
             continue
 
         results.append(_format_search_result(entry))
 
-        if len(results) >= max_results:
-            break
+    # Keep every matching form together. Do not silently truncate
+    # a Pokemon's forms when the result limit is reached.
+    if query:
+        return results[:max(1, min(limit, 500))]
 
-    return results
+    return results[:max(1, min(limit, 500))]
 
 
 def get_pokemon_details(name: str) -> dict[str, Any] | None:
@@ -155,8 +174,7 @@ def get_pokemon_details(name: str) -> dict[str, Any] | None:
     partial_matches = [
         entry
         for entry in entries
-        if query in entry.get("name", "").casefold()
-        or query in (entry.get("form") or "").casefold()
+        if _matches_pokemon(entry, query)
     ]
 
     if len(partial_matches) == 1:
