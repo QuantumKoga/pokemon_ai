@@ -105,6 +105,9 @@ The system is divided into four main layers.
                            v
                     Open WebUI / AI
 ```
+Graphical version of the architecture is presented below.
+
+![Project architecture](images/pokemon-ai-architecture.png)
 
 ### 1. Data Collection
 
